@@ -100,6 +100,60 @@ cpsace- RGB orient- 9 hog_channel- 2 pix_per_cell 32 spatial_size (32, 32) accur
 cpsace- RGB orient- 9 hog_channel- ALL pix_per_cell 8 spatial_size (16, 16) accuracy 0.9604
 
 ```
+# Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+
+Training of classifier is done using Train_classifier with the Training data obtained from extract_cars. The svc mode is saved into a pickle file so that next time the training need not be done again
+
+I tested the effectiveness of the model using the procedure “test_model_on_multi_images” with a predefined combination like start, stop, cspace etc
 
 
+# Sliding Window Search
 
+## Describe how (and identify where in your code) you implemented a sliding window search. How did you decide what scales to search and how much to overlap windows?
+
+I re-used find_cars from Project work out and then made few changes to it. I first used function to check whether boxes are identified correctly. I tried various combination of start, stop and threshold to check if cars are identified.
+Then I used tune_threshold_for_multi_images and fed saved images from test and sample video to fine tune the threshold. The routine uses a multiple combination of start stop for both X and Y axis with various combination of scale.
+
+## Show some examples of test images to demonstrate how your pipeline is working.
+
+Finally, I settled for the below parameters that provided better results. You can see below few output iamges. I also fine tuned threshold to avoid false positives
+
+* cspace='HSV'
+* orient= 8 #9
+* pix_per_cell= 6# 8
+* cell_per_block=2 #2
+* hog_channel='ALL'
+* spatial_size=(16,16)
+* hist_bins=8
+* hist_range=(0, 256)
+
+## What did you do to optimize the performance of your classifier?
+
+Below are few things that I did to optimize the whole performance:
+
+1. used various combination of stop, stop and scales. I started with a smaller scale and then slowly increased. I also used X start and stop to avoid cars to be detected on unwanted places
+
+## Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
+
+I stored the identified boxes in a class rectangle. This class helps to perform below functions
+
+1. Saves identified boxes so that the same box can be cached. Get_bboxes and save_bboxes are used for this
+2. Check_scan_status helps ot cache the image. The boxes are identified for first image and then same boxes are cached for n count of image. After this again the boxes are calculated for next image and so on.
+3. This skipping is increasing performance and also flickering of boxes. Also there should be no issue as 20 frames are generated before any significant movement can be detected
+4. If anytime there are no boxes detected, then boxes are cached for a predefined count
+  Also there were many false positives which I avoided by tuning threshold and also ensuring that boxes with uneven sizes are ignored
+  
+  
+I created a simple python script Image extractor that can extract a portion of video into images. I tested the pipeline using project video and then identified the places where there were false positive or no identification. I adjusted threshold and start and stop of X and Y axes to avoid these.
+  
+  
+With this I was able to reduce the false positives less than 5 .
+
+# Discussion
+## Briefly discuss any problems / issues you faced in your implementation of this project. Where will your pipeline likely fail? What could you do to make it more robust?
+
+Following are the problems:
+* My project is fine tuned for this video. There could be many false positives or no identifications for other videos without fine tuning.
+* Also I used caching to avoid frames where there were no cars detected and used position of previous images.
+* Also shadows are creating challenge in identification.
+* Cars moving in the slowest lane at a far distance is also creating issues as these cars overlaps with adjacent things like hills, tress etc and result in issue and as a result these are not detected
